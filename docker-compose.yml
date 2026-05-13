@@ -1,0 +1,114 @@
+
+
+services:
+
+  mysql-db:
+    image: mysql:8
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: estoque
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: senha123
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - estoque-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "admin", "-psenha123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-db:
+    image: mongo:6
+    container_name: mongo-db
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: estoque
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - estoque-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-produtos:
+    build: ./api-produtos
+    container_name: api-produtos
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      MYSQL_HOST: mysql-db
+      MYSQL_PORT: 3306
+      MYSQL_DB: estoque
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: senha123
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    networks:
+      - estoque-net
+
+  api-estoque:
+    build: ./api-estoque
+    container_name: api-estoque
+    restart: always
+    ports:
+      - "5002:5002"
+    environment:
+      MYSQL_HOST: mysql-db
+      MYSQL_PORT: 3306
+      MYSQL_DB: estoque
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: senha123
+      MONGO_HOST: mongo-db
+      MONGO_PORT: 27017
+      MONGO_DB: estoque
+      API_PRODUTOS_URL: http://api-produtos:5001
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      mongo-db:
+        condition: service_healthy
+      api-produtos:
+        condition: service_started
+    networks:
+      - estoque-net
+
+  api-movimentacoes:
+    build: ./api-movimentacoes
+    container_name: api-movimentacoes
+    restart: always
+    ports:
+      - "5003:5003"
+    environment:
+      MONGO_HOST: mongo-db
+      MONGO_PORT: 27017
+      MONGO_DB: estoque
+      API_ESTOQUE_URL: http://api-estoque:5002
+      API_PRODUTOS_URL: http://api-produtos:5001
+    depends_on:
+      mongo-db:
+        condition: service_healthy
+      api-estoque:
+        condition: service_started
+    networks:
+      - estoque-net
+
+networks:
+  estoque-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  mongo-data:
