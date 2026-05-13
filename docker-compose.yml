@@ -1,16 +1,13 @@
-
-
 services:
-
   mysql-db:
     image: mysql:8
     container_name: mysql-db
     restart: always
     environment:
-      MYSQL_DATABASE: estoque
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: senha123
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3307:3306"
     volumes:
@@ -18,7 +15,7 @@ services:
     networks:
       - estoque-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "admin", "-psenha123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,7 +25,7 @@ services:
     container_name: mongo-db
     restart: always
     environment:
-      MONGO_INITDB_DATABASE: estoque
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
     ports:
       - "27017:27017"
     volumes:
@@ -50,9 +47,9 @@ services:
     environment:
       MYSQL_HOST: mysql-db
       MYSQL_PORT: 3306
-      MYSQL_DB: estoque
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: senha123
+      MYSQL_DB: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
       mysql-db:
         condition: service_healthy
@@ -68,12 +65,12 @@ services:
     environment:
       MYSQL_HOST: mysql-db
       MYSQL_PORT: 3306
-      MYSQL_DB: estoque
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: senha123
+      MYSQL_DB: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MONGO_HOST: mongo-db
       MONGO_PORT: 27017
-      MONGO_DB: estoque
+      MONGO_DB: ${MONGO_DB}
       API_PRODUTOS_URL: http://api-produtos:5001
     depends_on:
       mysql-db:
@@ -94,7 +91,7 @@ services:
     environment:
       MONGO_HOST: mongo-db
       MONGO_PORT: 27017
-      MONGO_DB: estoque
+      MONGO_DB: ${MONGO_DB}
       API_ESTOQUE_URL: http://api-estoque:5002
       API_PRODUTOS_URL: http://api-produtos:5001
     depends_on:
